@@ -12,6 +12,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
     "@tsconfig/svelte": "^5.0.0",
+    "@types/pako": "^2.0.0",
     "autoprefixer": "^10.4.14",
     "daisyui": "^3.3.1",
     "postcss": "^8.4.27",
@@ -21,5 +22,9 @@
     "tslib": "^2.6.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
+  },
+  "dependencies": {
+    "js-base64": "^3.7.5",
+    "pako": "^2.1.0"
   }
 }

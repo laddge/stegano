@@ -1,47 +1,45 @@
 <script lang="ts">
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+  import { encode as b64Encode, fromUint8Array } from 'js-base64'
+  import { gzip } from 'pako'
+
+  let text: string = ''
+  let files: FileList
+  let canvas: HTMLCanvasElement
+
+  $: {
+    if (canvas && files) {
+      const [file] = files
+      const img = new Image()
+      const reader = new FileReader()
+      const ctx = canvas.getContext('2d')
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        img.src = reader.result as string
+        img.onload = () => {
+          canvas.width = img.width
+          canvas.height = img.height
+          ctx.drawImage(img, 0, 0)
+        }
+      }
+    }
+  }
+
+  const encode = (text: string) => {
+    const b64 = b64Encode(text)
+    const gzipped = '=' + fromUint8Array(gzip(text))
+    if (b64.length > gzipped.length) {
+      return gzipped
+    } else {
+      return b64
+    }
+  }
 </script>
 
-<main>
+<main class="max-w-lg mx-auto p-6">
   <div>
-    <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
+    <input type="text" bind:value={text} placeholder="Text" class="input input-primary w-full" />
+    <input type="file" accept="image/png" bind:files class="file-input file-input-bordered file-input-primary w-full mt-6" />
   </div>
-  <h1>Vite + Svelte</h1>
-
-  <div class="card">
-    <Counter />
-  </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
+  {encode(text)}
+  <canvas bind:this={canvas} class="w-full mt-6" />
 </main>
-
-<style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
-</style>
