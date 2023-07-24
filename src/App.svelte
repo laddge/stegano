@@ -2,7 +2,6 @@
   import { encode as b64Encode, decode as b64Decode, fromUint8Array, toUint8Array } from 'js-base64'
   import { gzip, ungzip } from 'pako'
 
-  let decodeMode: boolean = false
   let text: string = ''
   let files: FileList
   let canvas: HTMLCanvasElement
@@ -62,7 +61,7 @@
   }
 
   const unstegano = () => {
-    output = ''
+    text = ''
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
     let encoded: string = ''
     for (let i: number = 0; i < imgData.data.length / 4; i++) {
@@ -72,10 +71,10 @@
       const b64Index = r % 5 * 16 + g % 4 * 4 + b % 4
       encoded += 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='.split('')[b64Index]
     }
-    output = decode(encoded)
+    text = decode(encoded)
   }
 
-  $: {
+  const process = (decodeMode: boolean) => {
     if (canvas && files) {
       const [file] = files
       const img = new Image()
@@ -101,23 +100,34 @@
 
 <main class="max-w-lg mx-auto p-6">
   <div class="mb-6">
-    <div class="form-control w-52">
-      <label class="cursor-pointer label">
-        <span class="label-text">Decode</span>
-        <input type="checkbox" class="toggle toggle-primary" bind:checked={decodeMode} />
-      </label>
-    </div>
-    {#if !decodeMode}
-      <input type="text" bind:value={text} placeholder="Text" class="input input-primary w-full mt-6" />
-    {/if}
+    <input type="text" bind:value={text} placeholder="Text" class="input input-primary w-full mt-6" />
     <input type="file" accept="image/png" bind:files class="file-input file-input-bordered file-input-primary w-full mt-6" />
+    <div class="flex gap-3 justify-center mt-6">
+      <button on:click={() => process(false)} disabled={!text || !files} class="btn btn-primary grow">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+        </svg>
+        Text =&gt; Img
+      </button>
+      <button on:click={() => process(true)} disabled={!files} class="btn btn-primary grow">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+        </svg>
+        Img =&gt; Text
+      </button>
+    </div>
   </div>
   <p class="text-error font-bold">{err}</p>
   <canvas bind:this={canvas} class="hidden" />
-  {#if !decodeMode && output}
-    <img src={output} alt="output" class="w-full mt-6" />
-  {/if}
-  {#if decodeMode}
-    {output}
+  {#if output}
+    <img src={output} alt="output" class="w-full my-6" />
+    <a href={output} download="image.png">
+      <button class="btn btn-primary w-full">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+        Download
+      </button>
+    </a>
   {/if}
 </main>
