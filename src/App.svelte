@@ -100,6 +100,11 @@
 
 <main class="max-w-lg mx-auto p-6">
   <div class="mb-6">
+    <h1 class="text-3xl font-bold text-center">Steganography</h1>
+    <h2 class="text-xl text-center mt-3">Hide text in images</h2>
+  </div>
+  <hr />
+  <div class="mb-6">
     <input type="text" bind:value={text} placeholder="Text" class="input input-primary w-full mt-6" />
     <input type="file" accept="image/png" bind:files class="file-input file-input-bordered file-input-primary w-full mt-6" />
     <div class="flex gap-3 justify-center mt-6">
