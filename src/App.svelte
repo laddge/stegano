@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { encode as b64Encode, fromUint8Array } from 'js-base64'
-  import { gzip } from 'pako'
+  import { encode as b64Encode, decode as b64Decode, fromUint8Array, toUint8Array } from 'js-base64'
+  import { gzip, ungzip } from 'pako'
 
+  let decodeMode: boolean = false
   let text: string = ''
   let files: FileList
   let canvas: HTMLCanvasElement
@@ -10,12 +11,21 @@
   let err: string = ''
 
   const encode = (text: string) => {
+    if (text == '') return
     const b64 = b64Encode(text) + '='
     const gzipped = '=' + fromUint8Array(gzip(text)) + '='
     if (b64.length > gzipped.length) {
       return gzipped
     } else {
       return b64
+    }
+  }
+
+  const decode = (encoded: string) => {
+    if (encoded.slice(0, 1) == '=') {
+      return new TextDecoder().decode(ungzip(toUint8Array(encoded.slice(1, encoded.length - 1))))
+    } else {
+      return b64Decode(encoded.slice(0, encoded.length - 1))
     }
   }
 
@@ -51,6 +61,20 @@
     }
   }
 
+  const unstegano = () => {
+    output = ''
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    let encoded: string = ''
+    for (let i: number = 0; i < imgData.data.length / 4; i++) {
+      if (i > 1 && i % 4 == 1 && encoded.slice(-1) == '=') break
+      const [r, g, b, a] = imgData.data.slice(i * 4, i * 4 + 4)
+      if (a == 0) continue
+      const b64Index = r % 5 * 16 + g % 4 * 4 + b % 4
+      encoded += 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='.split('')[b64Index]
+    }
+    output = decode(encoded)
+  }
+
   $: {
     if (canvas && files) {
       const [file] = files
@@ -64,7 +88,11 @@
           canvas.width = img.width
           canvas.height = img.height
           ctx.drawImage(img, 0, 0)
-          stegano()
+          if (decodeMode) {
+            unstegano()
+          } else {
+            stegano()
+          }
         }
       }
     }
@@ -72,13 +100,24 @@
 </script>
 
 <main class="max-w-lg mx-auto p-6">
-  <div class="my-6">
-    <input type="text" bind:value={text} placeholder="Text" class="input input-primary w-full" />
+  <div class="mb-6">
+    <div class="form-control w-52">
+      <label class="cursor-pointer label">
+        <span class="label-text">Decode</span>
+        <input type="checkbox" class="toggle toggle-primary" bind:checked={decodeMode} />
+      </label>
+    </div>
+    {#if !decodeMode}
+      <input type="text" bind:value={text} placeholder="Text" class="input input-primary w-full mt-6" />
+    {/if}
     <input type="file" accept="image/png" bind:files class="file-input file-input-bordered file-input-primary w-full mt-6" />
   </div>
   <p class="text-error font-bold">{err}</p>
   <canvas bind:this={canvas} class="hidden" />
-  {#if output}
+  {#if !decodeMode && output}
     <img src={output} alt="output" class="w-full mt-6" />
+  {/if}
+  {#if decodeMode}
+    {output}
   {/if}
 </main>
